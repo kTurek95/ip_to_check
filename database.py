@@ -1,8 +1,11 @@
-import subprocess
-
-
 def add_ip(db_connection, ip: str):
-    """ dodanie adresu ip do bazy danych ip_to_check"""
+    """
+    Inserts the provided IP address into the 'ip_to_check' database.
+
+    Args:
+        db_connection (sqlite3.Connection): The database connection.
+        ip (str): The IP address to be inserted into the database.
+    """
     cursor = db_connection.cursor()
     cursor.execute('INSERT INTO ip_to_check VALUES(?)', (
         (ip,)
@@ -11,33 +14,48 @@ def add_ip(db_connection, ip: str):
 
 
 def get_ips(db_connection):
-    """ funkcja pobierająca adresy ip """
+    """
+    Retrieves a list of IP addresses from the 'ip_to_check' database.
+
+    Args:
+        db_connection (sqlite3.Connection): The database connection.
+
+    Returns:
+        sqlite3.Cursor: A cursor object containing the result set.
+            Use this cursor to iterate over the IP addresses retrieved from the database.
+    """
     cursor = db_connection.cursor()
     res = cursor.execute('SELECT ip FROM ip_to_check')
 
-    return res  # zwracamy res, żeby móc po nim iterować, przechodzić po jego wartościach
+    return res
 
 
 def save_status(db_connection, ip: str, is_up: bool):
-    """ funkcja zapisująca ip oraz status (czy udało się sprawdzić ip, czy nie) """
+    """
+    Inserts the status of an IP address into the 'log' table of the database.
+
+    Args:
+        db_connection (sqlite3.Connection): The database connection.
+        ip (str): The IP address for which the status is being saved.
+        is_up (bool): The status of the IP address (True for 'up', False for 'down').
+    """
+
     cursor = db_connection.cursor()
     cursor.execute('INSERT INTO log(ip, is_up) VALUES(?, ?)', (
         ip,
-        int(is_up)  # zamieniamy to na int, ponieważ gdy wynik będzie True, to zwróci nam 1, a gdy będzie False to 0
+        int(is_up)
     ))
     db_connection.commit()
 
 
-def check_if_is_up(ip: str) -> bool:
-    output = subprocess.run([f'ping -c 1 {ip}'], capture_output=True, shell=True)
-    if 'cannot resolve' in output.stderr.decode('utf8').lower():
-        return False
-    else:
-        return True
-
-
 def initialize(db_connection):
-    """ funkcja tworząca dwie tabele, 1 z nich to ip_to_check, 2 to log """
+    """
+    Initializes the database with required tables if they do not exist.
+
+    Args:
+        db_connection (sqlite3.Connection): The database connection.
+
+    """
     sqls = ['''CREATE TABLE IF NOT EXISTS ip_to_check(
     ip TEXT
     )''', ''' CREATE TABLE IF NOT EXISTS log(
